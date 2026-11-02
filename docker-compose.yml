@@ -1,0 +1,20 @@
+services:
+  tiktok-live-temple:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tiktok-live-temple
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Lưu trữ bền vững dữ liệu Bảng Vàng Công Đức và Cache âm thanh TTS
+      - ./data:/app/data
+      # Mount thư mục model ZeroTTS có sẵn để không phải tải lại từ HuggingFace
+      - ./models:/app/models
+    environment:
+      - PORT=3000
+      - TIKTOK_USER=zenfacts_vn
+      - PYTHONUNBUFFERED=1
+      - OMP_NUM_THREADS=3
+      - OMP_WAIT_POLICY=PASSIVE
