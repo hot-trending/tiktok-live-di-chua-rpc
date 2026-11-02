@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chùa Linh Ứng Online — Màn Hình Live (Đức Phật A Di Đà 9:16)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Noto+Serif:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/live.css" />
+  <style>
+    /* Chế độ Live Standalone / Popup sạch 100% */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0a0202;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .live-standalone-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #1a0606 0%, #060101 100%);
+    }
+
+    .live-standalone-container .stage-wrapper {
+      position: relative;
+      height: 100vh;
+      max-height: 100vh;
+      max-width: calc(100vh * 9 / 16);
+      width: auto;
+      aspect-ratio: 9 / 16;
+      border-radius: 0;
+      border: none;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.95), 0 0 30px rgba(218, 165, 32, 0.18);
+    }
+
+    /* Khung viền sang trọng khi ở màn hình rộng 16:9 */
+    body.wide-screen .live-standalone-container .stage-wrapper {
+      height: 98vh;
+      max-height: 98vh;
+      border-radius: 12px;
+      border: 1px solid rgba(244, 193, 80, 0.4);
+    }
+
+    /* Thanh công cụ nổi siêu nhỏ (mờ nhẹ, hiển thị rõ khi rê chuột) */
+    .floating-live-controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 99999;
+      display: flex;
+      gap: 6px;
+      opacity: 0.18;
+      transition: opacity 0.25s ease;
+    }
+    .floating-live-controls:hover {
+      opacity: 1;
+    }
+
+    body.hide-controls .floating-live-controls,
+    body.obs-clean .floating-live-controls {
+      display: none !important;
+    }
+
+    .float-btn {
+      background: rgba(18, 5, 5, 0.88);
+      color: #ffe699;
+      border: 1px solid rgba(244, 193, 80, 0.45);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .float-btn:hover {
+      background: rgba(244, 193, 80, 0.28);
+      border-color: #ffd700;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .float-btn.active {
+      background: linear-gradient(135deg, #1b5e20, #2e7d32);
+      border-color: #81c784;
+      color: #fff;
+    }
+
+    @media (max-width: 768px) {
+      .floating-live-controls {
+        top: 6px;
+        right: 6px;
+        gap: 4px;
+      }
+      .float-btn {
+        padding: 4px 7px;
+        font-size: 11px;
+      }
+      .float-btn .btn-text {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="obs-mode">
+  <div class="live-standalone-container">
+    <!-- Nút điều khiển nhanh góc phải trên (tự mờ) -->
+    <div class="floating-live-controls" id="floatingControls">
+      <button class="float-btn" id="btnFloatAudio" title="Bật/Tắt Âm Thanh Chùa">
+        <span>🔊</span> <span class="btn-text">Âm Thanh</span>
+      </button>
+      <button class="float-btn" id="btnFloatFullscreen" title="Bật/Tắt Toàn Màn Hình">
+        <span>⛶</span> <span class="btn-text">Toàn Màn Hình</span>
+      </button>
+      <button class="float-btn" id="btnFloatPopupWide" title="Mở Cửa Sổ Popup 16:9">
+        <span>🖥️</span> <span class="btn-text">16:9</span>
+      </button>
+      <button class="float-btn" id="btnFloatPopup916" title="Mở Cửa Sổ Popup 9:16">
+        <span>📱</span> <span class="btn-text">9:16</span>
+      </button>
+    </div>
+
+    <!-- KHUNG SÂN KHẤU 9:16 CHÁNH ĐIỆN -->
+    <div class="stage-wrapper" id="stageWrapper">
+      <div class="stage-9x16" id="stage9x16">
+        <!-- 1. HÌNH NỀN CHÁNH ĐIỆN ĐỨC PHẬT A DI ĐÀ 8K SẮC NÉT -->
+        <img
+          src="/assets/amitabha_stage.png"
+          alt="Đức Phật A Di Đà Chánh Điện"
+          class="sanctuary-bg-img"
+        />
+
+        <!-- 1B. HỆ THỐNG HÀO QUANG ĐỨC PHẬT A DI ĐÀ -->
+        <div class="buddha-halo-system" id="buddhaHaloSystem">
+          <div class="halo-sunburst"></div>
+          <div class="halo-counter-rays"></div>
+          <div class="halo-pulse-ring ring-1"></div>
+          <div class="halo-pulse-ring ring-2"></div>
+          <svg class="halo-dharma-svg" viewBox="0 0 680 680">
+            <g class="dharma-wheel-outer" stroke="#fff2a6" fill="none">
+              <circle cx="340" cy="340" r="295" stroke-width="2.2" stroke-dasharray="14 10" stroke-opacity="0.78" />
+              <circle cx="340" cy="340" r="252" stroke-width="1.8" stroke-dasharray="6 8" stroke-opacity="0.65" />
+              <circle cx="340" cy="340" r="210" stroke-width="2.5" stroke-opacity="0.7" />
+            </g>
+            <g class="dharma-wheel-inner" stroke="#ffe47a" fill="none">
+              <circle cx="340" cy="340" r="168" stroke-width="2.2" stroke-dasharray="20 12" stroke-opacity="0.85" />
+              <circle cx="340" cy="340" r="134" stroke-width="1.6" stroke-opacity="0.65" />
+            </g>
+          </svg>
+        </div>
+
+        <!-- HÀO QUANG ĐÀI SEN TRÊN TAY ĐỨC PHẬT A DI ĐÀ -->
+        <div class="lotus-hand-halo" id="lotusHandHalo"></div>
+
+        <!-- 2. THANH TRẠNG THÁI MỎNG TRÊN ĐỈNH -->
+        <header class="minimal-top-bar">
+          <div class="live-pill" id="liveStatusPill">
+            <span class="live-dot" id="liveDot"></span>
+            <span id="liveStatusText">CHÙA LINH ỨNG • ĐỨC PHẬT A DI ĐÀ</span>
+          </div>
+          <div class="top-Right-badges">
+            <div class="mini-stat-pill">
+              🔥 <strong id="statIncense">108</strong> hương • ✨ <strong id="statMerit">1,080</strong> CĐ
+            </div>
+          </div>
+        </header>
+
+        <!-- 3. CỘT SÁNG TÂM HƯƠNG & LƯ HƯƠNG TRUNG TÂM -->
+        <div class="sacred-light-beam" id="sacredLightBeam"></div>
+
+        <div class="incense-burner-zone" id="incenseBurnerZone" title="Bấm để Thắp Hương Dâng Phật">
+          <div class="incense-sticks-holder" id="incenseSticksHolder"></div>
+        </div>
+
+        <!-- PHÁP KHÍ TƯƠNG TÁC HAI BÊN BÀN THỜ -->
+        <div class="ritual-hotspot bell-hotspot" id="bellStation" title="Bấm để Thỉnh Đại Hồng Chung">
+          <span class="hotspot-icon">🔔</span>
+          <span class="hotspot-label">Thỉnh Chuông</span>
+        </div>
+
+        <div class="ritual-hotspot woodfish-hotspot" id="woodenFishStation" title="Bấm để Gõ Mõ Tích Công Đức">
+          <span class="hotspot-icon">🪵</span>
+          <span class="hotspot-label">Gõ Mõ (<span id="statWoodenFish">360</span>)</span>
+        </div>
+
+        <div class="ritual-hotspot fortune-hotspot" id="fortuneCylinder" title="Bấm để Xin Xăm / Gieo Quẻ">
+          <span class="hotspot-icon">🎋</span>
+          <span class="hotspot-label">Xin Xăm</span>
+        </div>
+
+        <!-- 4. CHỦ LỄ ĐANG DÂNG HƯƠNG TRƯỚC LƯ HƯƠNG ĐỒNG -->
+        <div class="central-worshipper" id="centralWorshipper">
+          <div class="worshipper-wish-bubble" id="centralWishBubble">
+            “Cầu gia đình bình an, vạn sự cát tường như ý”
+          </div>
+          <div class="central-sprite-stack" id="centralSpriteStack">
+            <img src="/assets/devotee_walk.png" data-pose="walk1" class="devotee-sprite pose-frame" alt="" />
+            <img src="/assets/devotee_walk_2.png" data-pose="walk2" class="devotee-sprite pose-frame" alt="" />
+            <img src="/assets/devotee_kneel_down.png" data-pose="kneelDown" class="devotee-sprite pose-frame" alt="" />
+            <img src="/assets/devotee.png" data-pose="kneel" class="devotee-sprite pose-frame active" alt="" />
+            <img src="/assets/devotee_bow.png" data-pose="forehead" class="devotee-sprite pose-frame" alt="" />
+            <img src="/assets/devotee_bow_mid.png" data-pose="bowMid" class="devotee-sprite pose-frame" alt="" />
+            <img src="/assets/devotee_prostrate.png" data-pose="prostrate" class="devotee-sprite pose-frame" alt="" />
+            <img src="/assets/devotee_prostrate_deep.png" data-pose="prostrateDeep" class="devotee-sprite pose-frame" alt="" />
+          </div>
+          <div class="name-tag central-name-tag">
+            <div class="tag-avatar" id="centralAvatar">🙏</div>
+            <div class="tag-texts">
+              <div class="tag-name" id="centralName">Thí Chủ Minh Tâm</div>
+              <div class="tag-sub" id="centralAction">✨ Dâng hương • +15 Công Đức</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. HÀNG 6 ĐỆM QUỲ VIP -->
+        <div class="vip-cushions-layer" id="vipCushionsLayer"></div>
+
+        <!-- 6. ĐẠO TRÀNG 40 PHẬT TỬ -->
+        <div class="congregation-hall" id="congregationHall"></div>
+
+        <!-- 7. NGƯỜI XEM ĐANG BƯỚC ĐI TRÊN THẢM ĐỎ -->
+        <div class="carpet-walker-layer" id="carpetWalkerLayer"></div>
+
+        <!-- 8. ĐÈN HOA ĐĂNG BAY LÊN -->
+        <div class="sky-lanterns-layer" id="skyLanternsLayer"></div>
+
+        <!-- 9. LỚP CANVAS HIỆU ỨNG -->
+        <canvas id="templeCanvas"></canvas>
+
+        <!-- 10. THANH HUD DƯỚI ĐÁY -->
+        <footer class="bottom-hud-bar">
+          <div class="hud-left-col">
+            <div class="hud-active-notice" id="hudActiveNotice">
+              <span class="flower-bullet">💮</span>
+              <strong id="devoteeNameLine">Thí Chủ Minh Tâm</strong>
+              <span>—</span>
+              <span id="devoteeActionTag">Dâng hương cầu bình an</span>
+              <span class="flower-bullet">💮</span>
+            </div>
+
+            <div class="hud-gift-cards">
+              <div class="hud-gift-card" id="cardIncense" title="Bấm để Thắp hương">
+                <div class="gift-coin-tag">1 COIN / CMT</div>
+                <div class="gift-card-body">
+                  <span class="gift-emoji">🔥</span>
+                  <span class="gift-title">Dâng hương</span>
+                </div>
+              </div>
+
+              <div class="hud-gift-card" id="cardBlessing" title="Bấm để Cầu phúc & Thả hoa đăng">
+                <div class="gift-coin-tag">5 COINS / TIM</div>
+                <div class="gift-card-body">
+                  <span class="gift-emoji">🏮</span>
+                  <span class="gift-title">Cầu phúc</span>
+                </div>
+              </div>
+
+              <div class="hud-gift-card" id="cardLotus" title="Bấm để Dâng Hoa Sen Vàng">
+                <div class="gift-coin-tag">10+ COINS</div>
+                <div class="gift-card-body">
+                  <span class="gift-emoji">🪷</span>
+                  <span class="gift-title">Hoa sen</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-right-leaderboard">
+            <div class="hud-lb-header">TẤM LÒNG THÀNH</div>
+            <div class="hud-lb-list" id="leaderboardList"></div>
+          </div>
+        </footer>
+
+        <!-- BANNER ĐẠI LỄ KIM LONG CHẦU PHẬT -->
+        <div class="grand-ceremony-banner" id="grandCeremonyBanner">
+          <div class="grand-title" id="grandTitle">🐉 ĐẠI LỄ KIM LONG CHẦU PHẬT 🐉</div>
+          <div class="grand-sub" id="grandSub">Công đức vô lượng: Đại Thí Chủ dâng lễ</div>
+        </div>
+
+        <!-- MODAL TỜ GIẢI QUẺ LINH XĂM -->
+        <div class="fortune-modal-overlay" id="fortuneModal">
+          <div class="fortune-scroll-card">
+            <div class="fortune-badge" id="fortuneRankBadge">THƯỢNG THƯỢNG CÁT</div>
+            <div class="fortune-heading" id="fortuneTitle">Quẻ Số 1 — Nhật Xuất Đông Phương</div>
+            <div class="fortune-devotee" id="fortuneDevotee">Thí chủ xin quẻ: Minh Tâm</div>
+            <div class="fortune-poem" id="fortunePoem"></div>
+            <div class="fortune-meaning" id="fortuneMeaning"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/audio.js"></script>
+  <script src="/js/particles.js"></script>
+  <script src="/js/live.js"></script>
+  <script>
+    // Xử lý tỉ lệ màn hình & nút popup nổi
+    (function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isWide = urlParams.get('ratio') === '16:9' || (window.innerWidth / window.innerHeight) > 1.2;
+      if (isWide) {
+        document.body.classList.add('wide-screen');
+      }
+      if (urlParams.get('clean') === '1' || urlParams.get('obs') === '1') {
+        document.body.classList.add('obs-clean');
+      }
+
+      window.addEventListener('resize', () => {
+        const wide = (window.innerWidth / window.innerHeight) > 1.2;
+        document.body.classList.toggle('wide-screen', wide);
+      });
+
+      // Mở popup
+      function openPopup(aspect) {
+        const wide = aspect === '16:9';
+        const w = wide ? 1280 : 540;
+        const h = wide ? 720 : 960;
+        const left = Math.round((screen.width - w) / 2);
+        const top = Math.round((screen.height - h) / 2);
+        const win = window.open(
+          '/live?ratio=' + (wide ? '16:9' : '9:16'),
+          'LiveTemplePopup_' + (wide ? '16x9' : '9x16'),
+          `width=${w},height=${h},top=${top},left=${left},status=no,menubar=no,toolbar=no,location=no,resizable=yes,scrollbars=no`
+        );
+        if (win) win.focus();
+      }
+
+      document.getElementById('btnFloatPopupWide')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPopup('16:9');
+      });
+
+      document.getElementById('btnFloatPopup916')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPopup('9:16');
+      });
+
+      // Bật/tắt toàn màn hình
+      const btnFs = document.getElementById('btnFloatFullscreen');
+      btnFs?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          btnFs.textContent = '⛶ Thu Nhỏ';
+        } else {
+          document.exitFullscreen().catch(() => {});
+          btnFs.textContent = '⛶ Toàn Màn Hình';
+        }
+      });
+
+      // Bật âm thanh
+      const btnAudio = document.getElementById('btnFloatAudio');
+      btnAudio?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.audioEngine) {
+          window.audioEngine.ensureContext();
+        }
+        btnAudio.classList.add('active');
+        btnAudio.textContent = '🔊 Đã Bật Âm';
+      });
+    })();
+  </script>
+</body>
+</html>
